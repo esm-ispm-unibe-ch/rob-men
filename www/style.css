@@ -1,0 +1,167 @@
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+html {
+  height: -webkit-fill-available;
+}
+
+a {
+  color: #e6af2e!important;
+  font-weight: bold!important;
+}
+
+a:hover {
+  color: #bf9126!important;
+}
+
+#wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex-grow: 1;
+  width: 100%;
+}
+
+.jumbotron {
+  color: #FFFFFF;
+  background-image: url('bg.jpeg');
+  background-size: contain;
+  margin-top: -20px;
+}
+
+a#nav-home {
+  color: #FFFFFF!important;
+}
+
+a.nav-link {
+  color: #e6af2e;
+  font-weight: bold!important;
+}
+
+a.nav-link:hover {
+  color: #bf9126;
+}
+
+.control-label {
+  font-weight: 500;
+  font-size: 1.25rem;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+}
+
+/*
+ * Header and footer styles
+ */
+.navbar {
+  background-color: #5511a1;
+  margin-bottom: 20px;
+}
+
+.navbar a {
+  color: #c7ace5!important;
+}
+
+.navbar a:hover {
+  color: #FFFFFF!important;
+}
+
+#nav-home {
+  color: #FFFFFF;
+}
+
+.navbar .nav-item .active {
+  color: #FFFFFF!important;
+}
+
+footer {
+  flex-shrink: 0;
+  padding-top: 10px;
+  margin-top: 10px;
+  width: 100%;
+  background: #e9ecef;
+}
+
+.credits {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  color: #FFF;
+  background-color: #28084d;
+  font-size: 0.75rem;
+}
+
+.progress-bar {
+  background-color: #e6af2e!important;
+}
+
+/*
+ * Table styles
+ */
+.page-item.active .page-link {
+  background-color: #e6af2e!important;
+  border-color: #e6af2e!important;
+}
+
+.page-link {
+  color: #e6af2e!important;
+}
+
+.active .page-link {
+  color: #FFFFFF!important;
+}
+
+.table.dataTable tbody tr.active td {
+  background-color: #e6af2e!important;
+}
+
+table.dataTable tr.dtrg-group td {
+  background-color: #5511a1!important;
+  color: #FFFFFF;
+  border: 0px!important;
+}
+
+
+.table thead tr th {
+  border: 0px;
+}
+
+.with-overflow {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/*
+ * Button styles
+ */
+.btn-primary {
+  color: #FFFFFF!important;
+  background-color: #e6af2e!important;
+  border-color: #e6af2e!important;
+}
+
+.btn-primary:hover {
+  color: #FFFFFF!important;
+  background-color: #bf9126!important;
+  border-color: #bf9126!important;
+}
+
+.btn-secondary {
+  color: #e6af2e!important;
+  background-color: #FFFFFF!important;
+  border-color: #e6af2e!important;
+  font-weight: bold!important;
+}
+
+.btn-secondary:hover {
+  color: #bf9126!important;
+  background-color: #FFFFFF!important;
+  border-color: #bf9126!important;
+  font-weight: bold;
+}

@@ -1,0 +1,38 @@
+id,study,Trial or first author,Comparisons ,t,ARM-GROUP,Year ,Sponsor-group,Centers,Age,Males,Diabetes,TOTAL_PATIENTS,n,r,rob,indirectness
+26764061,R1. Dedic A,BEACON,CCTA vs. standard care,CCTA,Anatomical,2016,Non-industry,Multicenter,55,127,31,500,250,41,l,l
+26764061,R1. Dedic A,BEACON,CCTA vs. standard care,Standard care,Standard care,2016,Non-industry,Multicenter,53,137,33,500,250,31,l,l
+26052677,R2. Levsky JM,"Levsky JM., et al.",CCTA vs. SPECT-MPI,CCTA,Anatomical,2015,Non-industry,Single,57,74,66,400,200,30,l,l
+26052677,R2. Levsky JM,"Levsky JM., et al.",CCTA vs. SPECT-MPI,SPECT-MPI,Functional,2015,Non-industry,Single,56,75,61,400,200,32,l,l
+25466568,R3. Hamilton-Craig C,CT-COMPARE,CCTA vs. exercise ECG,CCTA,Anatomical,2014,Non-industry,Single,52,182,23,562,322,26,l,l
+25466568,R3. Hamilton-Craig C,CT-COMPARE,CCTA vs. exercise ECG,Exercise ECG,Functional,2014,Non-industry,Single,52,140,15,562,240,9,l,l
+23998546,"R4, R5. Linde JJ",CATCH,CCTA vs. standard care,CCTA,Anatomical,2013,Industry,Single,56,271,35,600,299,49,l,l
+23998546,"R4, R5. Linde JJ",CATCH,CCTA vs. standard care,Standard care,Standard care,2013,Industry,Single,55,168,29,600,301,36,l,l
+24026478,R6. Lim SH,"Lim SH., et al.",SPECT-MPI vs. standard care,SPECT-MPI,Functional,2013,Non-industry,Single,52,676,180,1690,1126,73,l,l
+24026478,R6. Lim SH,"Lim SH., et al.",SPECT-MPI vs. standard care,Standard care,Standard care,2013,Non-industry,Single,52,321,90,1690,564,56,l,l
+23664718,R7. Miller CD,"Miller CD., et al.",CMR vs. standard care,CMR,CMR,2013,Non-industry,Single,54,28,16,105,52,5,l,l
+23664718,R7. Miller CD,"Miller CD., et al.",CMR vs. standard care,Standard care,Standard care,2013,Non-industry,Single,59,29,16,105,53,11,l,l
+22830462,R8. Hoffmann U,ROMICAT-II,CCTA vs. standard care,CCTA,Anatomical,2012,Non-industry,Multicenter,54,261,86,1000,501,59,l,l
+22830462,R8. Hoffmann U,ROMICAT-II,CCTA vs. standard care,Standard care,Standard care,2012,Non-industry,Multicenter,54,269,87,1000,499,40,l,l
+22449295,"R9, R10. Litt H",ACRIN-PA,CCTA vs. standard care,CCTA,Anatomical,2012,Non-industry,Multicenter,49,443,130,1392,929,69,l,l
+22449295,"R9, R10. Litt H",ACRIN-PA,CCTA vs. standard care,Standard care,Standard care,2012,Non-industry,Multicenter,50,202,64,1392,463,32,l,l
+21939822,R11. Goldstein JA,CT-STAT,CCTA vs. SPECT-MPI,CCTA,Anatomical,2011,Industry,Multicenter,50,163,20,749,375,26,l,l
+21939822,R11. Goldstein JA,CT-STAT,CCTA vs. SPECT-MPI,SPECT-MPI,Functional,2011,Industry,Multicenter,50,159,28,749,374,22,l,l
+21569165,R12. Miller AH,"Miller AH., et al.",CCTA vs. standard care,CCTA,Anatomical,2011,Non-industry,Single,51,13,ND,60,30,4,l,l
+21569165,R12. Miller AH,"Miller AH., et al.",CCTA vs. standard care,Standard care,Standard care,2011,Non-industry,Single,51,17,ND,60,30,4,l,l
+20554078,"R13, R14. Miller CD","Miller CD., et al.",CMR vs. standard care,CMR,CMR,2010,Non-industry,Single,55,24,19,109,52,8,l,l
+20554078,"R13, R14. Miller CD","Miller CD., et al.",CMR vs. standard care,Standard care,Standard care,2010,Non-industry,Single,57,30,23,109,57,19,l,l
+19231318,R15. Nucifora G,"Nucifora G., et al.",Stress ECHO vs. exercise ECG vs. standard care,Stress Echo,Functional,2009,ND,Multicenter,52,41,9,290,77,5,l,l
+19231318,R15. Nucifora G,"Nucifora G., et al.",Stress ECHO vs. exercise ECG vs. standard care,Exercise ECG,Functional,2009,ND,Multicenter,50,51,5,290,75,9,l,l
+19231318,R15. Nucifora G,"Nucifora G., et al.",Stress ECHO vs. exercise ECG vs. standard care,Standard care,Standard care,2009,ND,Multicenter,56,30,6,290,55,8,l,l
+18657674,R16. RChang SA,"Chang SA., et al.",CCTA vs. standard care,CCTA,Anatomical,2008,ND,Single,57,81,21,266,133,47,l,l
+18657674,R16. RChang SA,"Chang SA., et al.",CCTA vs. standard care,Standard care,Standard care,2008,ND,Single,58,82,25,266,133,57,l,l
+17320744,R17. Goldstein JA,"Goldstein JA., et al.",CCTA vs. standard care,CCTA,Anatomical,2007,Industry,Single,48,42,8,197,99,12,l,l
+17320744,R17. Goldstein JA,"Goldstein JA., et al.",CCTA vs. standard care,Standard care,Standard care,2007,Industry,Single,51,56,12,197,98,7,l,l
+17227784,R18. Jeetley P,"Jeetley P., et al.",Stress ECHO vs. exercise ECG,Stress Echo,Functional,2007,Non-industry,Single,61,121,49,433,215,41,l,l
+17227784,R18. Jeetley P,"Jeetley P., et al.",Stress ECHO vs. exercise ECG,Exercise ECG,Functional,2007,Non-industry,Single,60,125,53,433,218,72,l,l
+17884363,R19. Nucifora G,"Nucifora G., et al.",Stress ECHO vs. exercise ECG,Stress Echo,Functional,2007,ND,Multicenter,52,57,9,199,110,6,l,l
+17884363,R19. Nucifora G,"Nucifora G., et al.",Stress ECHO vs. exercise ECG,Exercise ECG,Functional,2007,ND,Multicenter,51,61,7,199,89,6,l,l
+15967730,R20. Jeetley P,"Jeetley P., et al.",Stress ECHO vs. exercise ECG,Stress Echo,Functional,2006,ND,Single,61,84,34,302,148,21,l,l
+15967730,R20. Jeetley P,"Jeetley P., et al.",Stress ECHO vs. exercise ECG,Exercise ECG,Functional,2006,ND,Single,60,87,39,302,154,36,l,l
+12460092,R21. Udelson JE,"Udelson JE., et al.",SPECT-MPI vs. standard care,SPECT-MPI,Functional,2002,ND,Multicenter,53,649,153,2475,1215,156,l,l
+12460092,R21. Udelson JE,"Udelson JE., et al.",SPECT-MPI vs. standard care,Standard care,Standard care,2002,ND,Multicenter,53,618,188,2475,1260,162,l,l
