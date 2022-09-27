@@ -76,28 +76,45 @@ bnma <- function(sm, bdata, ref, eff){
       family="binomial",
       link=ifelse(sm=="OR","logit", "log"),
       effects= eff)
-  } else {
-    model <- BUGSnet::nma.model(data=bdata,
-      outcome="mean",
-      sd="sd",
-      N="n",
-      reference=ref,
-      family="normal",
-      link="identity",
-      effects= eff)
+    
+    results <- BUGSnet::nma.run(model,
+                                n.burnin=2000,
+                                n.iter=10000,
+                                n.chains = 2)
+  } else if (sm == "SMD") {
+    # The model file used here is loaded directly from the `NMAJags` library
+    results <- jags(data = bdata, inits = NULL,
+                    parameters.to.save = c("SMD", "SMD.ref", "tau"), n.chains = 2, n.iter = 10000,
+                    n.burnin = 2000, DIC=F, n.thin=1,
+                    model.file = modelNMAContinuous)
+  } else if (sm == "MD") {
+   model <- BUGSnet::nma.model(data=bdata,
+                               outcome="mean",
+                               sd="sd",
+                               N="n",
+                               reference=ref,
+                               family="normal",
+                               link="identity",
+                               effects= eff)
+   
+   results <- BUGSnet::nma.run(model,
+                                n.burnin=2000,
+                                n.iter=10000,
+                                n.chains = 2)
   }
-  results <- BUGSnet::nma.run(model,
-    n.burnin=2000,
-    n.iter=10000,
-    n.chains = 2)
   return(results)
 }
 
-bData <- function(x) {
+
+bData <- function(x, sm, ref) {
   # Convenience function to prepare data for BUGSnet analysis.
-  res <- BUGSnet::data.prep(arm.data = x,
-              varname.t = "t",
-              varname.s = "id")
+  if(sm == "SMD") {
+    res <- make.jagsNMA.data(id, n=n, y=mean, sd=sd, t=t, data=x, reference = ref)
+  } else {
+    res <- BUGSnet::data.prep(arm.data = x,
+                              varname.t = "t",
+                              varname.s = "id")     
+  }
   return(res)
 }
 

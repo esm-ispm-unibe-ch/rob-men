@@ -9,6 +9,10 @@ require(tidyverse)
 source("util.R")
 source("netcontrib.R")
 source("nmafunnel.R")
+library(devtools)
+install_github("esm-ispm-unibe-ch/NMAJags")
+library(NMAJags)
+library(R2jags)
 
 server <- function(input, output, session) {
   #-----------------------------------------------------------------------------
@@ -70,8 +74,6 @@ server <- function(input, output, session) {
   observeEvent(state$data$directs, {
      res <- unique(state$data$directs$t) %>% sort()
      state$treatments <- res
-     state$bData <- bData(state$data$directs)
-     print("bData calculated")
   })
 
   # Analysis hook --------------------------------------------------------------
@@ -143,6 +145,16 @@ server <- function(input, output, session) {
     print("parameters set")
     state$parametersSet <- TRUE
   })
+  
+  observe({
+    validate(
+      need(state$inputSM != "", "no sm"),
+      need(state$inputRef != "", "no ref")
+    )
+    state$bData <- bData(state$data$directs, state$inputSM, state$inputRef)
+    print("bData calculated")
+    print(state$bData)    
+  })
 
   # NMA completion status
   observeEvent(state$nmaDone, {
@@ -156,7 +168,11 @@ server <- function(input, output, session) {
     print("Calculating pooled variance")
     bnmrData <- pool_variances(state$nma, directs())
     print(head(bnmrData))
-    state$nmrData <- data.prep(arm.data = bnmrData, varname.t = "t", varname.s = "id")
+    if(state$inputSM == "SMD"){
+      state$nmrData <- make.jagsNMA.data(id, n=n, y=mean, sd=sd, t=t, data=bnmrData, reference = state$inputRef, othervar = pooled_var)
+    } else {
+      state$nmrData <- data.prep(arm.data = bnmrData, varname.t = "t", varname.s = "id")
+    }
     print("calculated nmrData")
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
@@ -166,11 +182,17 @@ server <- function(input, output, session) {
              need(state$nmrData != "", "nmrData not ready"))
     print("calculating bnma league")
     larger_better <- ifelse(input$inputBH == "good", FALSE, TRUE)
-    state$bleague <- BUGSnet::nma.league(state$bnma,
-      central.tdcy = "median",
-      order = nma.rank(state$bnma, largerbetter = larger_better)$order,
-      log.scale = FALSE)
-    output$league <- renderTable({ state$bleague$table }, rownames = TRUE)
+    if (state$inputSM=="SMD") {
+      league <- out.jagsNMA.results(state$bnma, parameter = "SMD", treatnames = state$treatments)$leaguetable
+      state$bleague <- as.data.frame(league, optional = T)
+    } else {
+      state$bleague <- BUGSnet::nma.league(state$bnma,
+                                           central.tdcy = "median",
+                                           order = nma.rank(state$bnma, largerbetter = larger_better)$order,
+                                           log.scale = FALSE)$table
+    }
+    print(state$bleague)
+    output$league <- renderTable({ state$bleague })   # row.names is already F as default but it still prints row numbers
     # start Bayesian NMR
     if (state$inputSM == "OR" | state$inputSM == "RR") {
       model <- BUGSnet::nma.model(data=state$nmrData,
@@ -182,8 +204,19 @@ server <- function(input, output, session) {
                                   effects= input$inputMod,
                                   covariate = "pooled_var",
                                   prior.beta = input$inputBeta)
-    } else {
+      
+      state$bnmr <- BUGSnet::nma.run(model, n.burnin = state$burnIn,
+                                     n.iter=state$numIter, n.chains = 2)
+      state$bnmrDone <- TRUE      
+    } else if (state$inputSM == "SMD") {
+      # The model file used here is loaded directly from the `NMAJags` library
       print("inputSM else")
+      state$bnmr <- jags(data = state$nmrData, inits = NULL,
+                         parameters.to.save = c("SMD", "SMD.ref", "b", "tau"), n.chains = 2, n.iter = state$numIter,
+                         n.burnin = state$burnIn, DIC=F, n.thin=1,
+                         model.file = modelNMRContinuous)
+      state$bnmrDone <- TRUE
+    } else if (state$inputSM== "MD") {
       model <- BUGSnet::nma.model(data=state$nmrData,
                                   outcome="mean",
                                   sd="sd",
@@ -194,21 +227,29 @@ server <- function(input, output, session) {
                                   effects= input$inputMod,
                                   covariate = "pooled_var",
                                   prior.beta = input$inputBeta)
-    }
     state$bnmr <- BUGSnet::nma.run(model, n.burnin = state$burnIn,
                                    n.iter=state$numIter, n.chains = 2)
     state$bnmrDone <- TRUE
+    }
+
     print("bnmr is Done")
 
-    # AH: this output must be inside an obserer, as it uses a reactive value (inputBeta)
+    # AH: this output must be inside an observer, as it uses a reactive value (inputBeta)
     output$coefficients <- renderTable({
-      c1 <- state$bnmr$samples[1][[1]][,grep("beta",colnames(state$bnmr$samples[1][[1]]))]
-      c2 <- state$bnmr$samples[2][[1]][,grep("beta",colnames(state$bnmr$samples[2][[1]]))]
-      if (state$inputBeta == "UNRELATED") {
-        coef <- colMeans(rbind(c1, c2))
+      #coef <- NULL
+      if (state$inputSM== "SMD") {
+        print(state$bnmr$BUGSoutput$summary[grep("b", rownames(state$bnmr$BUGSoutput$summary)),"mean"])
+        coef <- state$bnmr$BUGSoutput$summary[grep("b", rownames(state$bnmr$BUGSoutput$summary)),"mean"]
       } else {
-        coef <- mean(rbind(c1, c2))
+        c1 <- state$bnmr$samples[1][[1]][,grep("beta",colnames(state$bnmr$samples[1][[1]]))]
+        c2 <- state$bnmr$samples[2][[1]][,grep("beta",colnames(state$bnmr$samples[2][[1]]))]
+        if (state$inputBeta == "UNRELATED") {
+          coef <- colMeans(rbind(c1, c2))
+        } else {
+          coef <- mean(rbind(c1, c2))
+        }
       }
+      #coef
     }, rownames = ifelse(state$inputBeta == "UNRELATED", TRUE, FALSE), colnames = F)
 
     # build pairwise comparison table
@@ -233,20 +274,21 @@ server <- function(input, output, session) {
 
     ## calculate NMR league table
     print("Calculating NMR league table")
-    print(head(state$nmrData))
+    #print(head(state$nmrData))
     larger_better <- ifelse(input$inputBH == "good", FALSE, TRUE)
-    cov_value <- min(state$nmrData$arm.data$pooled_var)
-    rank <- nma.rank(state$bnmr, largerbetter = larger_better, cov.value = cov_value)
-    nmrLeague <- BUGSnet::nma.league(state$bnmr,
+    if (state$inputSM != "SMD") {
+      cov_value <- min(state$nmrData$arm.data$pooled_var)
+      rank <- nma.rank(state$bnmr, largerbetter = larger_better, cov.value = cov_value)
+      nmrLeague <- BUGSnet::nma.league(state$bnmr,
                                      central.tdcy = "median",
                                      order = rank$order,
                                      log.scale = FALSE,
                                      cov.value = cov_value)
-    state$nmrLeague <- nmrLeague
-
-    output$nmr <- renderTable({
-      nmrLeague$table
-    }, rownames = TRUE)
+      state$nmrLeague <- nmrLeague
+      output$nmr <- renderTable({
+        nmrLeague$table
+      }, rownames = TRUE)
+    }
   }, ignoreInit = TRUE, ignoreNULL = T)
 
   # Observers for pairwise table -----------------------------------------------
@@ -278,7 +320,7 @@ server <- function(input, output, session) {
     print("Rebuilding RoB table")
     state$robTable <- rebuildRobTable(state$pairwiseTable,
                                       state$contributionMatrix,
-                                      state$bleague$table,
+                                      state$bleague,
                                       state$nmrLeague$table,
                                       state$robTable)
   })
@@ -305,7 +347,7 @@ server <- function(input, output, session) {
     isolate({
       if (nrow(state$robTable) == 0) {
         print(c("building not rebuilding",state$state2))
-        state$robTable <- buildRobTable(state$pairwiseTable, state$contributionMatrix, state$bleague$table, state$nmrLeague$table)
+        state$robTable <- buildRobTable(state$pairwiseTable, state$contributionMatrix, state$bleague, state$nmrLeague$table)
       }
     })
   })
@@ -390,7 +432,7 @@ server <- function(input, output, session) {
       }
     } else {
       if (!state$analysisStarted) {
-        chs <- c(#"Standardized mean difference" = "SMD",
+        chs <- c("Standardized mean difference" = "SMD",
                  "Mean difference" = "MD")
       }
     }
@@ -500,9 +542,9 @@ server <- function(input, output, session) {
   output$args <- renderUI({
     tags$div(
     uiOutput("smOptions"),
-    if(state$data$isBinary==F) {
-      strong("NOTE: currently ROB-MEN cannot calculate standardised mean differences.", style = "color:blue")
-    },
+    # if(state$data$isBinary==F) {
+    #   strong("NOTE: currently ROB-MEN cannot calculate standardised mean differences.", style = "color:blue")
+    # },
     uiOutput("bhOptions"),
     uiOutput("ModelOptions"),
     uiOutput("ref"),
@@ -581,15 +623,33 @@ server <- function(input, output, session) {
 
   output$summary <- renderUI({
     validate(need(state$analysisStarted, "Analysis parameters not set"))
-    tags$div(h4("Network graph", align = "center"),
-             plotOutput("netgraph", width = "100%", height = "500px"),
-             h4("Network characteristics", align = "left"),
-             tableOutput("netinfo"),
-             h4("Interventions characteristics", align = "left"),
-             tableOutput("intinfo"),
-             h4("Direct comparisons characteristics", align = "left"),
-             tableOutput("compinfo"))
+    if (state$inputSM=="SMD") {
+      fluidPage(theme = bs_theme(version = 4),
+                h4("Network graph", align = "center"),
+                plotOutput("netgraph", width = "100%", height = "500px"),
+                tags$br(),
+                h6(paste("There are", state$nma$k, "studies reporting the outcome of interest. 
+                        Below are the total number of participants in each of the included intervention.")),
+                tableOutput("netchar")
+      )
+    }
+    else {
+      fluidPage(theme = bs_theme(version = 4),
+                h4("Network graph", align = "center"),
+                plotOutput("netgraph", width = "100%", height = "500px"),
+                tags$br(),
+                h4("Network characteristics", align = "left"),
+                tableOutput("netinfo"),
+                h4("Interventions characteristics", align = "left"),
+                tableOutput("intinfo"),
+                h4("Direct comparisons characteristics", align = "left"),
+                tableOutput("compinfo"))
+    }
   })
+  
+  output$netchar <- renderTable({
+    tapply(state$data$directs$n, state$data$directs$t, sum, na.rm=T)
+  }, colnames = FALSE, rownames = TRUE)
 
   output$netgraph <- renderPlot({
     netgraph(state$nma, col = "black", plastic=FALSE,
@@ -628,18 +688,26 @@ server <- function(input, output, session) {
   # Outputs for Bayesian NMA tab
   #-----------------------------------------------------------------------------
   output$plot_forest<- renderPlot({
-    BUGSnet::nma.forest(state$bnma, comparator = state$inputRef) +
-      ylab(paste(input$inputSM, "relative to", input$inputRef )) +
-      theme(axis.text = element_text(size=15))
+    if (state$inputSM!="SMD") {
+      BUGSnet::nma.forest(state$bnma, comparator = state$inputRef) + 
+        ylab(paste(input$inputSM, "relative to", input$inputRef )) + 
+        theme(axis.text = element_text(size=15))
+    }
   })
   
-  output$tau <- renderText({
-    round(mean(c(mean(state$bnma$samples[1][[1]][,"sigma"]), mean(state$bnma$samples[2][[1]][,"sigma"]))),3)
+  output$tau <- renderText({    
+    if (state$inputSM=="SMD") {
+      het <- round(state$bnma$BUGSoutput$mean$tau, 3)
+    }
+    else{
+      het <- round(mean(c(mean(state$bnma$samples[1][[1]][,"sigma"]), mean(state$bnma$samples[2][[1]][,"sigma"]))),3)
+    }
+    het
   })
 
   output$tab_league <- renderTable({
-    state$bleague$table
-  }, rownames = T)
+    state$bleague
+  }, rownames = F)
 
   output$bayesianNMA <- renderUI({
     validate(need(state$analysisStarted, "analysis not started"),
@@ -656,7 +724,9 @@ server <- function(input, output, session) {
     )
   })
 
-  # Outputs for funnel plot tab
+  #-----------------------------------------------------------------------------
+  # Outputs for  funnel plots tab
+  #-----------------------------------------------------------------------------
   output$funnelplots <- renderUI({
     validate(need(state$nmaDone, "netmeta not ready"))
     if (state$hasFunnels) {
@@ -816,17 +886,28 @@ server <- function(input, output, session) {
 
   output$rhat <- renderTable({
     nmaDiag <- nma.diag(state$bnmr, plot_prompt = FALSE)
-    nmaDiag$gelman.rubin$psrf[, -2]
+    if (state$inputSM=="SMD") {
+      nmaDiag <- state$bnmr$BUGSoutput$summary[grep("ref|tau", rownames(state$bnmr$BUGSoutput$summary)),"Rhat"]
+    }
+    else {
+      nmaDiag <- nma.diag(state$bnmr, plot_prompt = FALSE)
+      nmaDiag$gelman.rubin$psrf[, -2]
+    }
   }, rownames = T, colnames = F)
 
   output$downloadTrace <- downloadHandler(
     filename = "traceplots.pdf",
-    content = function(file) {
-      pdf(file)
-      nma.diag(state$bnmr, plot_prompt = FALSE)  # This has to be repeated on plot because the plots
-      dev.off()                                  # are created as a side-effect.
-    },
-    contentType = 'pdf')
+    content = function(file)
+      if (state$inputSM=="SMD") {
+        pdf(file)
+        R2jags::traceplot(state$bnmr, varname=c("SMD.ref","tau"), ask=FALSE)
+        dev.off()
+      } else {
+        pdf(file)
+        nma.diag(state$bnmr, plot_prompt = FALSE)  # This has to be repeated on plot because the plots
+        dev.off()                                  # are created as a side-effect.
+      },
+     contentType = 'pdf')
 
   output$downloadNmr <- downloadHandler(
     filename <- "nmrPlot.pdf",
