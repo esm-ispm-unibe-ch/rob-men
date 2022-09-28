@@ -184,7 +184,9 @@ server <- function(input, output, session) {
     larger_better <- ifelse(input$inputBH == "good", FALSE, TRUE)
     if (state$inputSM=="SMD") {
       league <- out.jagsNMA.results(state$bnma, parameter = "SMD", treatnames = state$treatments)$leaguetable
-      state$bleague <- as.data.frame(league, optional = T)
+      colnames(league) <- state$treatments
+      rownames(league) <- state$treatments
+      state$bleague <- league
     } else {
       state$bleague <- BUGSnet::nma.league(state$bnma,
                                            central.tdcy = "median",
@@ -192,7 +194,7 @@ server <- function(input, output, session) {
                                            log.scale = FALSE)$table
     }
     print(state$bleague)
-    output$league <- renderTable({ state$bleague })   # row.names is already F as default but it still prints row numbers
+    #output$league <- renderTable({ state$bleague })
     # start Bayesian NMR
     if (state$inputSM == "OR" | state$inputSM == "RR") {
       model <- BUGSnet::nma.model(data=state$nmrData,
@@ -707,23 +709,121 @@ server <- function(input, output, session) {
 
   output$tab_league <- renderTable({
     state$bleague
-  }, rownames = F)
+  }, rownames = TRUE)
 
   output$bayesianNMA <- renderUI({
     validate(need(state$analysisStarted, "analysis not started"),
              need(state$bnmaDone, "waiting for analysis"))
-    tags$div(
-      h4("Posterior medians and 95% Cr.I.", align = "center"),
-      div(plotOutput("plot_forest", height = "500px", width = "800px"), align = "center"),
-      br(),
-      p("The heterogeneity (tau) is estimated at ", textOutput("tau", inline = T), align = "center"),
-      br(),
-      h5("League table", align = "center"),
-      div(tableOutput("tab_league"), style = "font-size:80%", align = "center"),
-      p(paste(state$inputSM, "and 95% credible intervals of treatment in the column versus treatment in the row"), align = "center")
-    )
+    if (state$inputSM=="SMD") {
+      tags$div(
+        p("The heterogeneity (tau) is estimated at ", textOutput("tau", inline = T), align = "center"),
+        br(),
+        h5("League table", align = "center"),
+        div(tableOutput("tab_league"), style = "font-size:80%", align = "center"),
+        p(paste(state$inputSM, "and 95% credible intervals of treatment in the column versus treatment in the row"), align = "center")
+      )
+    }
+    else {
+      tags$div(
+        h4("Posterior medians and 95% Cr.I.", align = "center"),
+        div(plotOutput("plot_forest", height = "500px", width = "800px"), align = "center"),
+        br(),
+        p("The heterogeneity (tau) is estimated at ", textOutput("tau", inline = T), align = "center"),
+        br(),
+        h5("League table", align = "center"),
+        div(tableOutput("tab_league"), style = "font-size:80%", align = "center"),
+        p(paste(state$inputSM, "and 95% credible intervals of treatment in the column versus treatment in the row"), align = "center")
+      )
+    }
   })
 
+  #-----------------------------------------------------------------------------
+  # Outputs for Bayesian NMR tab
+  #-----------------------------------------------------------------------------
+
+  output$bayesianNMR <- renderUI({
+    validate(need(state$bnmrDone, "waiting for analysis"))
+    isolate({
+      if(state$inputSM=="SMD") {
+        tags$div (
+          h5("Checks for convergence of network meta-regression model", align = "center"),
+          p("Check the trace plots (download) and the Gelman-Rubin diagnostic values (table below) being close to 1 for convergence. If needed, increase number of iterations and burn-in or change the assumption for treatment-specific interactions to 'Exchangeable' and rerun analysis"),
+          conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
+                           tags$div(class = "loading", tags$img(src = "./loading.gif"))),
+          div(tableOutput("rhat"), align= "center"),
+          downloadButton("downloadTrace", "Download Trace Plots as PDF", class = "btn-primary"),
+          h4("Network meta-regression for variance of the (linear) treatment effect", align = "center"),
+          p(ifelse(state$inputBeta=="UNRELATED", "Values of the coefficients (betas) in the regression model between relative treatment effects and study variance", "Average value of the coefficients (betas) in the regression model between relative treatment effects and study variance")),
+          conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
+                           tags$div(class = "loading", tags$img(src = "./loading.gif"))),
+          div(tableOutput("coefficients"), align= "center")
+        )
+      }
+      else {
+        tags$div (
+          h5("Checks for convergence of network meta-regression model", align = "center"),
+          p("Check the trace plots (download) and the Gelman-Rubin diagnostic values (table below) being close to 1 for convergence. If needed, increase number of iterations and burn-in or change the assumption for treatment-specific interactions to 'Exchangeable' and rerun analysis"),
+          conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
+                           tags$div(class = "loading", tags$img(src = "./loading.gif"))),
+          div(tableOutput("rhat"), align= "center"),
+          downloadButton("downloadTrace", "Download Trace Plots as PDF", class = "btn-primary"),
+          h4("Network meta-regression for variance of the (linear) treatment effect", align = "center"),
+          p(ifelse(state$inputBeta=="UNRELATED", "Values of the coefficients (betas) in the regression model between relative treatment effects and study variance", "Average value of the coefficients (betas) in the regression model between relative treatment effects and study variance")),
+          conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
+                           tags$div(class = "loading", tags$img(src = "./loading.gif"))),
+          div(tableOutput("coefficients"), align= "center"),
+          h6("Press the button below to download the network meta-regression plot as PDF."), 
+          p("Each line shows how the linear effect of each treatment versus reference changes for different study variances. 
+            The value at variance 0 are the extrapolated linear effects of each treatment versus reference for an imaginary study with 0 variance."),
+          downloadButton("downloadNmr", "Download Regression Plot as PDF", class = "btn-primary"),
+          h5("League table", align = "center"),
+          p("League table showing results for the minimum observed variance of", textOutput("minvar", inline = T), align= "center"),
+          conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
+                           tags$div(class = "loading", tags$img(src = "./loading.gif"))),
+          div(tableOutput("nmr"), style = "font-size:80%", align = "center")
+        )  
+      }
+    })
+  })
+  
+  output$rhat <- renderTable({
+    if (state$inputSM=="SMD") {
+      nmaDiag <- state$bnmr$BUGSoutput$summary[grep("ref|tau", rownames(state$bnmr$BUGSoutput$summary)),"Rhat"]
+    }
+    else {
+      nmaDiag <- nma.diag(state$bnmr, plot_prompt = FALSE)
+      nmaDiag$gelman.rubin$psrf[, -2]
+    }
+  }, rownames = T, colnames = F)
+  
+  output$downloadTrace <- downloadHandler(
+    filename = "traceplots.pdf",
+    content = function(file)
+      if (state$inputSM=="SMD") {
+        pdf(file)
+        R2jags::traceplot(state$bnmr, varname=c("SMD.ref","tau"), ask=FALSE)
+        dev.off()
+      } else {
+        pdf(file)
+        nma.diag(state$bnmr, plot_prompt = FALSE)  # This has to be repeated on plot because the plots
+        dev.off()                                  # are created as a side-effect.
+      },
+    contentType = 'pdf')
+  
+  output$downloadNmr <- downloadHandler(
+    filename <- "nmrPlot.pdf",
+    content = function(file) {
+      plot <- nma.regplot(state$bnmr) +
+        xlab("Study variance of the (linear) treatment effect") +
+        ylab(paste("Treatment effect (linear scale) versus", input$inputRef))
+      ggsave(file, plot = plot, device = "pdf")
+    },
+    contentType = 'pdf')
+  
+  output$minvar <- renderText({
+    min(state$nmrData$arm.data$pooled_var)
+  })
+  
   #-----------------------------------------------------------------------------
   # Outputs for  funnel plots tab
   #-----------------------------------------------------------------------------
@@ -854,74 +954,6 @@ server <- function(input, output, session) {
     }
   )
 
-  #-----------------------------------------------------------------------------
-  # Outputs for Bayesian NMR tab
-  #-----------------------------------------------------------------------------
-  output$bayesianNMR <- renderUI({
-  validate(need(state$bnmrDone, "waiting for analysis"))
-    isolate({
-      tags$div(
-        h5("Checks for convergence of network meta-regression model", align = "center"),
-        p("Check the trace plots (download) and the Gelman-Rubin diagnostic values (table below) being close to 1 for convergence. If needed, increase number of iterations and burn-in or change the assumption for treatment-specific interactions to 'Exchangeable' and rerun analysis"),
-        conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
-          tags$div(class = "loading", tags$img(src = "./loading.gif"))),
-        div(tableOutput("rhat"), align= "center"),
-        downloadButton("downloadTrace", "Download Trace Plots as PDF", class = "btn-primary"),
-        h4("Network meta-regression for variance of the (linear) treatment effect", align = "center"),
-        p(ifelse(state$inputBeta=="UNRELATED", "Values of the coefficients (betas) in the regression model between relative treatment effects and study variance", "Average value of the coefficients (betas) in the regression model between relative treatment effects and study variance")),
-        conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
-          tags$div(class = "loading", tags$img(src = "./loading.gif"))),
-        div(tableOutput("coefficients"), align= "center"),
-        h6("Press the button below to download the network meta-regression plot as PDF."), p("Each line shows how the linear effect of each treatment versus reference changes for different study variances.
-          The value at variance 0 are the extrapolated linear effects of each treatment versus reference for an imaginary study with 0 variance."),
-        downloadButton("downloadNmr", "Download Regression Plot as PDF", class = "btn-primary"),
-        h5("League table", align = "center"),
-        p("League table showing results for the minimum observed variance of", textOutput("minvar", inline = T), align= "center"),
-        conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
-          tags$div(class = "loading", tags$img(src = "./loading.gif"))),
-        div(tableOutput("nmr"), style = "font-size:80%", align = "center")
-     )
-    })
-  })
-
-  output$rhat <- renderTable({
-    nmaDiag <- nma.diag(state$bnmr, plot_prompt = FALSE)
-    if (state$inputSM=="SMD") {
-      nmaDiag <- state$bnmr$BUGSoutput$summary[grep("ref|tau", rownames(state$bnmr$BUGSoutput$summary)),"Rhat"]
-    }
-    else {
-      nmaDiag <- nma.diag(state$bnmr, plot_prompt = FALSE)
-      nmaDiag$gelman.rubin$psrf[, -2]
-    }
-  }, rownames = T, colnames = F)
-
-  output$downloadTrace <- downloadHandler(
-    filename = "traceplots.pdf",
-    content = function(file)
-      if (state$inputSM=="SMD") {
-        pdf(file)
-        R2jags::traceplot(state$bnmr, varname=c("SMD.ref","tau"), ask=FALSE)
-        dev.off()
-      } else {
-        pdf(file)
-        nma.diag(state$bnmr, plot_prompt = FALSE)  # This has to be repeated on plot because the plots
-        dev.off()                                  # are created as a side-effect.
-      },
-     contentType = 'pdf')
-
-  output$downloadNmr <- downloadHandler(
-    filename <- "nmrPlot.pdf",
-    content = function(file) {
-      plot <- nma.regplot(state$bnmr) +
-        xlab("Study variance of the (linear) treatment effect") +
-        ylab(paste("Treatment effect (linear scale) versus", input$inputRef))
-      ggsave(file, plot = plot, device = "pdf")
-    },
-    contentType = 'pdf')
-
-  output$minvar <- renderText({
-    min(state$nmrData$arm.data$pooled_var)
-  })
 
   #-----------------------------------------------------------------------------
   # Output for RoB-MEN table
