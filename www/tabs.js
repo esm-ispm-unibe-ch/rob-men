@@ -104,6 +104,7 @@ function startAnalysis () {
   if (r === true) {
     console.log("starting analysis")
     Shiny.setInputValue("startAnalysis", true);
+    $("#nav-load").off('click').attr("href", "javascript:void(0);");
   } else {
     console.log("Analysis cancelled")
   }
