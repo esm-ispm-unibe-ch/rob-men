@@ -170,6 +170,7 @@ server <- function(input, output, session) {
     print(head(bnmrData))
     if(state$inputSM == "SMD"){
       state$nmrData <- make.jagsNMA.data(id, n=n, y=mean, sd=sd, t=t, data=bnmrData, reference = state$inputRef, othervar = pooled_var)
+      state$nmrData$variab <- state$nmrData$variab - min(state$nmrData$variab)
     } else {
       state$nmrData <- data.prep(arm.data = bnmrData, varname.t = "t", varname.s = "id")
     }
@@ -194,6 +195,7 @@ server <- function(input, output, session) {
                                            log.scale = FALSE)$table
     }
     print(state$bleague)
+    print(state$nmrData)
     #output$league <- renderTable({ state$bleague })
     # start Bayesian NMR
     if (state$inputSM == "OR" | state$inputSM == "RR") {
@@ -211,12 +213,19 @@ server <- function(input, output, session) {
                                      n.iter=state$numIter, n.chains = 2)
       state$bnmrDone <- TRUE      
     } else if (state$inputSM == "SMD") {
-      # The model file used here is loaded directly from the `NMAJags` library
+      # The model file used here is loaded directly from the `NMAJags` library or sourced from the directory (for modelNMRContinuous_bExch)
       print("inputSM else")
-      state$bnmr <- jags(data = state$nmrData, inits = NULL,
-                         parameters.to.save = c("SMD", "SMD.ref", "b", "tau"), n.chains = 2, n.iter = state$numIter,
-                         n.burnin = state$burnIn, DIC=F, n.thin=1,
-                         model.file = modelNMRContinuous)
+      if (input$inputBeta=="UNRELATED") {
+        state$bnmr <- jags(data = state$nmrData, inits = NULL,
+                           parameters.to.save = c("SMD", "SMD.ref", "b", "tau"), n.chains = 2, 
+                           n.iter = state$numIter,n.burnin = state$burnIn, 
+                           DIC=F, n.thin=1, model.file = modelNMRContinuous)
+      } else {
+        state$bnmr <- jags(data = state$nmrData, inits = NULL,
+                           parameters.to.save = c("SMD", "SMD.ref", "B", "tau"), n.chains = 2, 
+                           n.iter = state$numIter,n.burnin = state$burnIn, 
+                           DIC=F, n.thin=1, model.file = modelNMRContinuous_bExch)
+      }
       state$bnmrDone <- TRUE
     } else if (state$inputSM== "MD") {
       model <- BUGSnet::nma.model(data=state$nmrData,
@@ -238,10 +247,15 @@ server <- function(input, output, session) {
 
     # AH: this output must be inside an observer, as it uses a reactive value (inputBeta)
     output$coefficients <- renderTable({
-      #coef <- NULL
+      coef <- NULL
       if (state$inputSM== "SMD") {
-        print(state$bnmr$BUGSoutput$summary[grep("b", rownames(state$bnmr$BUGSoutput$summary)),"mean"])
-        coef <- state$bnmr$BUGSoutput$summary[grep("b", rownames(state$bnmr$BUGSoutput$summary)),"mean"]
+        if (state$inputBeta == "UNRELATED") {
+          print(state$bnmr$BUGSoutput$summary[grep("b", rownames(state$bnmr$BUGSoutput$summary)),"mean"])
+          coef <- state$bnmr$BUGSoutput$mean$b
+        } else {
+          print(state$bnmr$BUGSoutput$summary[grep("B", rownames(state$bnmr$BUGSoutput$summary)),"mean"])
+          coef <- state$bnmr$BUGSoutput$mean$B
+        }
       } else {
         c1 <- state$bnmr$samples[1][[1]][,grep("beta",colnames(state$bnmr$samples[1][[1]]))]
         c2 <- state$bnmr$samples[2][[1]][,grep("beta",colnames(state$bnmr$samples[2][[1]]))]
@@ -251,7 +265,7 @@ server <- function(input, output, session) {
           coef <- mean(rbind(c1, c2))
         }
       }
-      #coef
+      coef
     }, rownames = ifelse(state$inputBeta == "UNRELATED", TRUE, FALSE), colnames = F)
 
     # build pairwise comparison table
@@ -267,7 +281,7 @@ server <- function(input, output, session) {
     # calculate contribution matrix
     print("calculating contribution")
     cm <- netcontrib(state$nma, state$inputMod)
-    print(attributes(cm))
+    #print(attributes(cm))
     state$contributionMatrix <- round(cm, digits = 1) %>%
       mutate(comparison=rownames(cm)) %>%
       relocate(comparison)
@@ -278,19 +292,24 @@ server <- function(input, output, session) {
     print("Calculating NMR league table")
     #print(head(state$nmrData))
     larger_better <- ifelse(input$inputBH == "good", FALSE, TRUE)
-    if (state$inputSM != "SMD") {
+    if (state$inputSM == "SMD") {
+      nmrLeague <- out.jagsNMA.results(state$bnmr, parameter = "SMD", treatnames = state$treatments)$leaguetable
+      colnames(nmrLeague) <- state$treatments
+      rownames(nmrLeague) <- state$treatments
+    } else  {
       cov_value <- min(state$nmrData$arm.data$pooled_var)
       rank <- nma.rank(state$bnmr, largerbetter = larger_better, cov.value = cov_value)
       nmrLeague <- BUGSnet::nma.league(state$bnmr,
                                      central.tdcy = "median",
                                      order = rank$order,
                                      log.scale = FALSE,
-                                     cov.value = cov_value)
-      state$nmrLeague <- nmrLeague
-      output$nmr <- renderTable({
-        nmrLeague$table
-      }, rownames = TRUE)
+                                     cov.value = cov_value)$table
+      
     }
+    state$nmrLeague <- nmrLeague
+      output$nmr <- renderTable({
+        state$nmrLeague
+      }, rownames = TRUE)
   }, ignoreInit = TRUE, ignoreNULL = T)
 
   # Observers for pairwise table -----------------------------------------------
@@ -323,7 +342,7 @@ server <- function(input, output, session) {
     state$robTable <- rebuildRobTable(state$pairwiseTable,
                                       state$contributionMatrix,
                                       state$bleague,
-                                      state$nmrLeague$table,
+                                      state$nmrLeague,
                                       state$robTable)
   })
 
@@ -349,7 +368,7 @@ server <- function(input, output, session) {
     isolate({
       if (nrow(state$robTable) == 0) {
         print(c("building not rebuilding",state$state2))
-        state$robTable <- buildRobTable(state$pairwiseTable, state$contributionMatrix, state$bleague, state$nmrLeague$table)
+        state$robTable <- buildRobTable(state$pairwiseTable, state$contributionMatrix, state$bleague, state$nmrLeague)
       }
     })
   })
@@ -605,24 +624,6 @@ server <- function(input, output, session) {
     }
   })
 
-  output$tabContributionMatrix <- renderUI({
-    validate(need(state$contributionMatrix != "", "contribution matrix not calculated"))
-    fluidPage(theme = bs_theme(version = 4),
-      tags$br(),
-      p("Each cell entry provides the percentage contribution that the direct comparison (column) makes to the calculation of the corresponding NMA relative treatment effect (row)."),
-      downloadButton("downloadContributionMatrix", "Download Contribution Matrix", class = "btn-primary"),
-      tags$br(),
-      tableOutput("contributionMatrix")
-    )
-  })
-
-  output$downloadContributionMatrix <- downloadHandler(
-    filename <- "contribution_matrix.csv",
-    content <- function(file) {
-      write.csv(state$contributonMatrix, file, row.names = FALSE)
-    }
-  )
-
   output$summary <- renderUI({
     validate(need(state$analysisStarted, "Analysis parameters not set"))
     if (state$inputSM=="SMD") {
@@ -753,10 +754,16 @@ server <- function(input, output, session) {
           div(tableOutput("rhat"), align= "center"),
           downloadButton("downloadTrace", "Download Trace Plots as PDF", class = "btn-primary"),
           h4("Network meta-regression for variance of the (linear) treatment effect", align = "center"),
-          p(ifelse(state$inputBeta=="UNRELATED", "Values of the coefficients (betas) in the regression model between relative treatment effects and study variance", "Average value of the coefficients (betas) in the regression model between relative treatment effects and study variance")),
+          p(ifelse(state$inputBeta=="UNRELATED", "Values of the coefficients (betas) in the regression model between relative treatment effects and study variance", 
+                   "Average value of the coefficients (betas) in the regression model between relative treatment effects and study variance")),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
-          div(tableOutput("coefficients"), align= "center")
+          div(tableOutput("coefficients"), align= "center"),
+          h5("League table", align = "center"),
+          p("League table showing results for the minimum observed variance of", textOutput("minvar", inline = T), align= "center"),
+          conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
+                           tags$div(class = "loading", tags$img(src = "./loading.gif"))),
+          div(tableOutput("nmr"), style = "font-size:80%", align = "center")
         )
       }
       else {
@@ -768,7 +775,8 @@ server <- function(input, output, session) {
           div(tableOutput("rhat"), align= "center"),
           downloadButton("downloadTrace", "Download Trace Plots as PDF", class = "btn-primary"),
           h4("Network meta-regression for variance of the (linear) treatment effect", align = "center"),
-          p(ifelse(state$inputBeta=="UNRELATED", "Values of the coefficients (betas) in the regression model between relative treatment effects and study variance", "Average value of the coefficients (betas) in the regression model between relative treatment effects and study variance")),
+          p(ifelse(state$inputBeta=="UNRELATED", "Values of the coefficients (betas) in the regression model between relative treatment effects and study variance", 
+                   "Average value of the coefficients (betas) in the regression model between relative treatment effects and study variance")),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
           div(tableOutput("coefficients"), align= "center"),
@@ -789,6 +797,7 @@ server <- function(input, output, session) {
   output$rhat <- renderTable({
     if (state$inputSM=="SMD") {
       nmaDiag <- state$bnmr$BUGSoutput$summary[grep("ref|tau", rownames(state$bnmr$BUGSoutput$summary)),"Rhat"]
+      print(nmaDiag)
     }
     else {
       nmaDiag <- nma.diag(state$bnmr, plot_prompt = FALSE)
@@ -821,7 +830,12 @@ server <- function(input, output, session) {
     contentType = 'pdf')
   
   output$minvar <- renderText({
-    min(state$nmrData$arm.data$pooled_var)
+    if (state$inputSM=="SMD") {
+      minvar <- min(state$nmrData$variab)
+    } else {
+      minvar <- min(state$nmrData$arm.data$pooled_var)
+    }
+    minvar
   })
   
   #-----------------------------------------------------------------------------
@@ -872,6 +886,29 @@ server <- function(input, output, session) {
     },
     contentType = "pdf")
 
+  
+  #-----------------------------------------------------------------------------
+  # Outputs for contribution matrix tab
+  #-----------------------------------------------------------------------------
+  output$tabContributionMatrix <- renderUI({
+    validate(need(state$contributionMatrix != "", "contribution matrix not calculated"))
+    fluidPage(theme = bs_theme(version = 4),
+              tags$br(),
+              p("Each cell entry provides the percentage contribution that the direct comparison (column) makes to the calculation of the corresponding NMA relative treatment effect (row)."),
+              downloadButton("downloadContributionMatrix", "Download Contribution Matrix", class = "btn-primary"),
+              tags$br(),
+              tableOutput("contributionMatrix")
+    )
+  })
+  
+  output$downloadContributionMatrix <- downloadHandler(
+    filename <- "contribution_matrix.csv",
+    content <- function(file) {
+      write.csv(state$contributonMatrix, file, row.names = FALSE)
+    }
+  )
+  
+  
   #-------------------------------------------------------------------------------
   # Output for pairwise comparison table
   #-------------------------------------------------------------------------------
