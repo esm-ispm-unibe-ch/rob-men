@@ -170,7 +170,8 @@ server <- function(input, output, session) {
     print(head(bnmrData))
     if(state$inputSM == "SMD"){
       state$nmrData <- make.jagsNMA.data(id, n=n, y=mean, sd=sd, t=t, data=bnmrData, reference = state$inputRef, othervar = pooled_var)
-      state$nmrData$variab <- state$nmrData$variab - min(state$nmrData$variab)
+      state$nmrData$orig <- state$nmrData$variab 
+      state$nmrData$variab <- state$nmrData$orig - min(state$nmrData$orig)
     } else {
       state$nmrData <- data.prep(arm.data = bnmrData, varname.t = "t", varname.s = "id")
     }
@@ -274,6 +275,7 @@ server <- function(input, output, session) {
     state$hasFunnels <- !is.null(fp())
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
+  
   # Bayesian NMR completion status
   observeEvent(state$bnmrDone, {
     validate(need(state$analysisStarted, "Analysis not started"),
@@ -717,7 +719,8 @@ server <- function(input, output, session) {
              need(state$bnmaDone, "waiting for analysis"))
     if (state$inputSM=="SMD") {
       tags$div(
-        p("The heterogeneity (tau) is estimated at ", textOutput("tau", inline = T), align = "center"),
+        br(),
+        h6("The heterogeneity (tau) is estimated at ", textOutput("tau", inline = T), align = "center"),
         br(),
         h5("League table", align = "center"),
         div(tableOutput("tab_league"), style = "font-size:80%", align = "center"),
@@ -831,7 +834,7 @@ server <- function(input, output, session) {
   
   output$minvar <- renderText({
     if (state$inputSM=="SMD") {
-      minvar <- min(state$nmrData$variab)
+      minvar <- min(min(state$nmrData$orig))
     } else {
       minvar <- min(state$nmrData$arm.data$pooled_var)
     }
