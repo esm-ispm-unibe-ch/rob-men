@@ -82,7 +82,7 @@ modelNMRContinuous_bExch <- function ()
     b[k] ~ dnorm(B, 1/pow(tau_b,2))
   }
   B ~ dnorm(0, 1e-04)
-  tau_b ~ dunif(0, 100)
+  tau_b ~ dunif(0, 5)
 }
 
 
