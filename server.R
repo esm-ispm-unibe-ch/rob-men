@@ -9,6 +9,8 @@ require(tidyverse)
 source("util.R")
 source("netcontrib.R")
 source("nmafunnel.R")
+source("modelNMRContinuous_bExch.R")
+source("out.jagsNMA.median.R")
 library(devtools)
 install_github("esm-ispm-unibe-ch/NMAJags")
 library(NMAJags)
@@ -185,7 +187,7 @@ server <- function(input, output, session) {
     print("calculating bnma league")
     larger_better <- ifelse(input$inputBH == "good", FALSE, TRUE)
     if (state$inputSM=="SMD") {
-      league <- out.jagsNMA.results(state$bnma, parameter = "SMD", treatnames = state$treatments)$leaguetable
+      league <- out.jagsNMA.median(state$bnma, parameter = "SMD", treatnames = state$treatments)$leaguetable
       colnames(league) <- state$treatments
       rownames(league) <- state$treatments
       state$bleague <- league
@@ -295,7 +297,7 @@ server <- function(input, output, session) {
     #print(head(state$nmrData))
     larger_better <- ifelse(input$inputBH == "good", FALSE, TRUE)
     if (state$inputSM == "SMD") {
-      nmrLeague <- out.jagsNMA.results(state$bnmr, parameter = "SMD", treatnames = state$treatments)$leaguetable
+      nmrLeague <- out.jagsNMA.median(state$bnmr, parameter = "SMD", treatnames = state$treatments)$leaguetable
       colnames(nmrLeague) <- state$treatments
       rownames(nmrLeague) <- state$treatments
     } else  {
@@ -792,7 +794,7 @@ server <- function(input, output, session) {
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
           div(tableOutput("nmr"), style = "font-size:80%", align = "center")
-        )  
+        )
       }
     })
   })
