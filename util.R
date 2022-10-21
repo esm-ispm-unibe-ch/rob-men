@@ -70,26 +70,27 @@ nma <- function(data, sm, modelFixed, modelRandom) {
 bnma <- function(sm, bdata, ref, eff){
   if (sm == "OR" | sm == "RR") {
     model <- BUGSnet::nma.model(data=bdata,
-      outcome="r",
-      N="n",
-      reference=ref,
-      family="binomial",
-      link=ifelse(sm=="OR","logit", "log"),
-      effects= eff)
+                                outcome="r",
+                                N="n",
+                                reference=ref,
+                                family="binomial",
+                                link=ifelse(sm=="OR","logit", "log"),
+                                effects= eff)
   } else {
     model <- BUGSnet::nma.model(data=bdata,
-      outcome="mean",
-      sd="sd",
-      N="n",
-      reference=ref,
-      family="normal",
-      link="identity",
-      effects= eff)
+                                outcome="mean",
+                                sd="sd",
+                                N="n",
+                                reference=ref,
+                                family="normal",
+                                link="identity",
+                                effects= eff)
   }
   results <- BUGSnet::nma.run(model,
-    n.burnin=2000,
-    n.iter=10000,
-    n.chains = 2)
+                              DIC = F,
+                              n.burnin=2000,
+                              n.iter=10000,
+                              n.chains = 2)
   return(results)
 }
 

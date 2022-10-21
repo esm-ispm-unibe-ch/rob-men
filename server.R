@@ -195,8 +195,11 @@ server <- function(input, output, session) {
                                   covariate = "pooled_var",
                                   prior.beta = input$inputBeta)
     }
-    state$bnmr <- BUGSnet::nma.run(model, n.burnin = state$burnIn,
-                                   n.iter=state$numIter, n.chains = 2)
+    state$bnmr <- BUGSnet::nma.run(model, 
+                                   DIC=F,
+                                   n.burnin = state$burnIn,
+                                   n.iter=state$numIter, 
+                                   n.chains = 2)
     state$bnmrDone <- TRUE
     print("bnmr is Done")
 
