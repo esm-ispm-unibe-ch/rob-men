@@ -6,11 +6,11 @@ library(netmeta)
 library(BUGSnet)
 library(bslib)  # used to override default  bootstrap version (4 instead of 3)
 require(tidyverse)
-source("util.R")
-source("netcontrib.R")
-source("nmafunnel.R")
-source("modelNMRContinuous_bExch.R")
-source("out.jagsNMA.median.R")
+source("scripts/util.R")
+source("scripts/netcontrib.R")
+source("scripts/nmafunnel.R")
+source("scripts/modelNMRContinuous_bExch.R")
+source("scripts/outJagsNMAmedian.R")
 library(devtools)
 install_github("esm-ispm-unibe-ch/NMAJags")
 library(NMAJags)
@@ -187,7 +187,7 @@ server <- function(input, output, session) {
     print("calculating bnma league")
     larger_better <- ifelse(input$inputBH == "good", FALSE, TRUE)
     if (state$inputSM=="SMD") {
-      league <- out.jagsNMA.median(state$bnma, parameter = "SMD", treatnames = state$treatments)$leaguetable
+      league <- outJagsNMAmedian(state$bnma, parameter = "SMD", treatnames = state$treatments)$leaguetable
       colnames(league) <- state$treatments
       rownames(league) <- state$treatments
       state$bleague <- league
@@ -200,6 +200,7 @@ server <- function(input, output, session) {
     print(state$bleague)
     print(state$nmrData)
     #output$league <- renderTable({ state$bleague })
+    
     # start Bayesian NMR
     if (state$inputSM == "OR" | state$inputSM == "RR") {
       model <- BUGSnet::nma.model(data=state$nmrData,
@@ -213,7 +214,7 @@ server <- function(input, output, session) {
                                   prior.beta = input$inputBeta)
       
       state$bnmr <- BUGSnet::nma.run(model, n.burnin = state$burnIn,
-                                     n.iter=state$numIter, n.chains = 2)
+                                     n.iter=state$numIter, n.chains = 2, DIC = F)
       state$bnmrDone <- TRUE      
     } else if (state$inputSM == "SMD") {
       # The model file used here is loaded directly from the `NMAJags` library or sourced from the directory (for modelNMRContinuous_bExch)
@@ -242,7 +243,7 @@ server <- function(input, output, session) {
                                   covariate = "pooled_var",
                                   prior.beta = input$inputBeta)
     state$bnmr <- BUGSnet::nma.run(model, n.burnin = state$burnIn,
-                                   n.iter=state$numIter, n.chains = 2)
+                                   n.iter=state$numIter, n.chains = 2, DIC = F)
     state$bnmrDone <- TRUE
     }
 
@@ -250,26 +251,33 @@ server <- function(input, output, session) {
 
     # AH: this output must be inside an observer, as it uses a reactive value (inputBeta)
     output$coefficients <- renderTable({
-      coef <- NULL
-      if (state$inputSM== "SMD") {
-        if (state$inputBeta == "UNRELATED") {
+      #coef <- NULL
+      if (state$inputBeta == "UNRELATED") {
+        if (state$inputSM== "SMD") {
           print(state$bnmr$BUGSoutput$summary[grep("b", rownames(state$bnmr$BUGSoutput$summary)),"mean"])
-          coef <- state$bnmr$BUGSoutput$mean$b
+          coef <- state$bnmr$BUGSoutput$summary[grep("b", rownames(state$bnmr$BUGSoutput$summary)),"mean"]
         } else {
+          c1 <- state$bnmr$samples[1][[1]][,grep("beta",colnames(state$bnmr$samples[1][[1]]))]
+          c2 <- state$bnmr$samples[2][[1]][,grep("beta",colnames(state$bnmr$samples[2][[1]]))]
+          coef <- colMeans(rbind(c1, c2))
+        }
+        coef
+      }
+    }, rownames = T, colnames = F)
+    
+    output$coefficientMean <- renderText({
+      if (state$inputBeta == "EXCHANGEABLE") {
+        if (state$inputSM== "SMD") {
           print(state$bnmr$BUGSoutput$summary[grep("B", rownames(state$bnmr$BUGSoutput$summary)),"mean"])
           coef <- state$bnmr$BUGSoutput$mean$B
-        }
-      } else {
-        c1 <- state$bnmr$samples[1][[1]][,grep("beta",colnames(state$bnmr$samples[1][[1]]))]
-        c2 <- state$bnmr$samples[2][[1]][,grep("beta",colnames(state$bnmr$samples[2][[1]]))]
-        if (state$inputBeta == "UNRELATED") {
-          coef <- colMeans(rbind(c1, c2))
         } else {
+          c1 <- state$bnmr$samples[1][[1]][,grep("beta",colnames(state$bnmr$samples[1][[1]]))]
+          c2 <- state$bnmr$samples[2][[1]][,grep("beta",colnames(state$bnmr$samples[2][[1]]))]
           coef <- mean(rbind(c1, c2))
         }
+        coef
       }
-      coef
-    }, rownames = ifelse(state$inputBeta == "UNRELATED", TRUE, FALSE), colnames = F)
+    })
 
     # build pairwise comparison table
     state$pairwiseTable <- build_pairwise_table(state$treatments, state$data$directs, state$data$otherOutcomes, state$data$isBinary)
@@ -297,7 +305,7 @@ server <- function(input, output, session) {
     #print(head(state$nmrData))
     larger_better <- ifelse(input$inputBH == "good", FALSE, TRUE)
     if (state$inputSM == "SMD") {
-      nmrLeague <- out.jagsNMA.median(state$bnmr, parameter = "SMD", treatnames = state$treatments)$leaguetable
+      nmrLeague <- outJagsNMAmedian(state$bnmr, parameter = "SMD", treatnames = state$treatments)$leaguetable
       colnames(nmrLeague) <- state$treatments
       rownames(nmrLeague) <- state$treatments
     } else  {
@@ -311,9 +319,10 @@ server <- function(input, output, session) {
       
     }
     state$nmrLeague <- nmrLeague
-      output$nmr <- renderTable({
-        state$nmrLeague
-      }, rownames = TRUE)
+    output$nmr <- renderTable({
+      state$nmrLeague
+    }, rownames = TRUE)
+    
   }, ignoreInit = TRUE, ignoreNULL = T)
 
   # Observers for pairwise table -----------------------------------------------
@@ -760,7 +769,8 @@ server <- function(input, output, session) {
           downloadButton("downloadTrace", "Download Trace Plots as PDF", class = "btn-primary"),
           h4("Network meta-regression for variance of the (linear) treatment effect", align = "center"),
           p(ifelse(state$inputBeta=="UNRELATED", "Values of the coefficients (betas) in the regression model between relative treatment effects and study variance", 
-                   "Average value of the coefficients (betas) in the regression model between relative treatment effects and study variance")),
+                   "The average value of the regression coefficients (betas) of the interaction between relative treatment effects and study variance is "), 
+            textOutput("coefficientMean", inline = T), align="center"),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
           div(tableOutput("coefficients"), align= "center"),
@@ -768,7 +778,8 @@ server <- function(input, output, session) {
           p("League table showing results for the minimum observed variance of", textOutput("minvar", inline = T), align= "center"),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
-          div(tableOutput("nmr"), style = "font-size:80%", align = "center")
+          div(tableOutput("nmr"), style = "font-size:80%", align = "center"),
+          p(paste(state$inputSM, "and 95% credible intervals of treatment in the column versus treatment in the row"), align = "center")
         )
       }
       else {
@@ -781,7 +792,8 @@ server <- function(input, output, session) {
           downloadButton("downloadTrace", "Download Trace Plots as PDF", class = "btn-primary"),
           h4("Network meta-regression for variance of the (linear) treatment effect", align = "center"),
           p(ifelse(state$inputBeta=="UNRELATED", "Values of the coefficients (betas) in the regression model between relative treatment effects and study variance", 
-                   "Average value of the coefficients (betas) in the regression model between relative treatment effects and study variance")),
+                   "The average value of the regression coefficients (betas) of the interaction between relative treatment effects and study variance is"), 
+            textOutput("coefficientMean", inline = T), align="center"),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
           div(tableOutput("coefficients"), align= "center"),
@@ -793,7 +805,8 @@ server <- function(input, output, session) {
           p("League table showing results for the minimum observed variance of", textOutput("minvar", inline = T), align= "center"),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
-          div(tableOutput("nmr"), style = "font-size:80%", align = "center")
+          div(tableOutput("nmr"), style = "font-size:80%", align = "center"),
+          p(paste(state$inputSM, "and 95% credible intervals of treatment in the column versus treatment in the row"), align = "center")
         )
       }
     })
