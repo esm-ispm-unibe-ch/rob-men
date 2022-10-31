@@ -1,4 +1,4 @@
-out.jagsNMA.median <- function (JAGSobject, parameter = parameter, forestplot = F, 
+outJagsNMAmedian <- function (JAGSobject, parameter = parameter, forestplot = F, 
           treatnames = NA, rounding = 2) 
 {
   resultstable = JAGSobject$BUGSoutput$summary
