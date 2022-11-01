@@ -245,8 +245,8 @@ server <- function(input, output, session) {
                                   effects= input$inputMod,
                                   covariate = "pooled_var",
                                   prior.beta = input$inputBeta)
-    }
-    state$bnmr <- BUGSnet::nma.run(model, 
+      
+      state$bnmr <- BUGSnet::nma.run(model, 
                                    DIC=F,
                                    n.burnin = state$burnIn,
                                    n.iter=state$numIter, 
@@ -289,8 +289,10 @@ server <- function(input, output, session) {
 
     # build pairwise comparison table
     state$pairwiseTable <- build_pairwise_table(state$treatments, state$data$directs, state$data$otherOutcomes, state$data$isBinary)
+    
     # create funnel plots
     state$hasFunnels <- !is.null(fp())
+    
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
   
