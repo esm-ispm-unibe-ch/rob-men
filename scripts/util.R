@@ -113,7 +113,7 @@ bnma <- function(sm, bdata, ref, eff){
 bData <- function(x, sm, ref) {
   # Convenience function to prepare data for BUGSnet analysis.
   if(sm == "SMD") {
-    res <- make.jagsNMA.data(id, n=n, y=mean, sd=sd, t=t, data=x, reference = ref)
+    res <- makeJagsNMAdata(id, n=n, y=mean, sd=sd, t=t, data=x, reference = ref)
   } else {
     res <- BUGSnet::data.prep(arm.data = x,
                               varname.t = "t",

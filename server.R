@@ -9,11 +9,11 @@ require(tidyverse)
 source("scripts/util.R")
 source("scripts/netcontrib.R")
 source("scripts/nmafunnel.R")
+source("scripts/makeJagsNMAdata.R")
+source("scripts/modelNMAContinuous.R")
+source("scripts/modelNMRContinuous.R")
 source("scripts/modelNMRContinuous_bExch.R")
 source("scripts/outJagsNMAmedian.R")
-library(devtools)
-install_github("esm-ispm-unibe-ch/NMAJags")
-library(NMAJags)
 library(R2jags)
 
 server <- function(input, output, session) {
@@ -171,7 +171,7 @@ server <- function(input, output, session) {
     bnmrData <- pool_variances(state$nma, directs())
     print(head(bnmrData))
     if(state$inputSM == "SMD"){
-      state$nmrData <- make.jagsNMA.data(id, n=n, y=mean, sd=sd, t=t, data=bnmrData, reference = state$inputRef, othervar = pooled_var)
+      state$nmrData <- makeJagsNMAdata(id, n=n, y=mean, sd=sd, t=t, data=bnmrData, reference = state$inputRef, othervar = pooled_var)
       state$nmrData$orig <- state$nmrData$variab 
       state$nmrData$variab <- state$nmrData$orig - min(state$nmrData$orig)
     } else {
@@ -655,7 +655,7 @@ server <- function(input, output, session) {
                 plotOutput("netgraph", width = "100%", height = "500px"),
                 tags$br(),
                 h6(paste("There are", state$nma$k, "studies reporting the outcome of interest. 
-                        Below are the total number of participants in each of the included intervention.")),
+                        Below are the total number of participants in each of the included interventions.")),
                 tableOutput("netchar")
       )
     }
