@@ -14,6 +14,7 @@ source("scripts/modelNMAContinuous.R")
 source("scripts/modelNMRContinuous.R")
 source("scripts/modelNMRContinuous_bExch.R")
 source("scripts/outJagsNMAmedian.R")
+install.packages("R2jags")
 library(R2jags)
 
 server <- function(input, output, session) {
