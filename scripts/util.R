@@ -80,11 +80,13 @@ bnma <- function(sm, bdata, ref, eff){
     results <- BUGSnet::nma.run(model,
                                 n.burnin=2000,
                                 n.iter=10000,
-                                n.chains = 2)
+                                n.chains = 2,
+                                DIC=F)
   } else if (sm == "SMD") {
     # The model file used here is loaded directly from the `NMAJags` library
     results <- jags(data = bdata, inits = NULL,
-                    parameters.to.save = c("SMD", "SMD.ref", "tau"), n.chains = 2, n.iter = 10000,
+                    parameters.to.save = c("SMD", "SMD.ref", "tau"), 
+                    n.chains = 2, n.iter = 10000,
                     n.burnin = 2000, DIC=F, n.thin=1,
                     model.file = modelNMAContinuous)
   } else if (sm == "MD") {
@@ -98,9 +100,10 @@ bnma <- function(sm, bdata, ref, eff){
                                effects= eff)
    
    results <- BUGSnet::nma.run(model,
-                                n.burnin=2000,
-                                n.iter=10000,
-                                n.chains = 2)
+                               n.burnin=2000,
+                               n.iter=10000,
+                               n.chains = 2,
+                               DIC=F)
   }
   return(results)
 }
