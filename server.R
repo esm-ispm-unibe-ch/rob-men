@@ -735,7 +735,7 @@ server <- function(input, output, session) {
         br(),
         h5("League table", align = "center"),
         div(tableOutput("tab_league"), style = "font-size:80%", align = "center"),
-        p(paste(state$inputSM, "and 95% credible intervals of treatment in the column versus treatment in the row"), align = "center")
+        p(paste(state$inputSM, "and 95% credible intervals of treatment in the row versus treatment in the column"), align = "center")
       )
     }
     else {
@@ -779,7 +779,7 @@ server <- function(input, output, session) {
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
           div(tableOutput("nmr"), style = "font-size:80%", align = "center"),
-          p(paste(state$inputSM, "and 95% credible intervals of treatment in the column versus treatment in the row"), align = "center")
+          p(paste(state$inputSM, "and 95% credible intervals of treatment in the row versus treatment in the column"), align = "center")
         )
       }
       else {
