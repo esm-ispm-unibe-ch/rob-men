@@ -213,8 +213,11 @@ server <- function(input, output, session) {
                                   covariate = "pooled_var",
                                   prior.beta = input$inputBeta)
       
-      state$bnmr <- BUGSnet::nma.run(model, n.burnin = state$burnIn,
-                                     n.iter=state$numIter, n.chains = 2, DIC = F)
+      state$bnmr <- BUGSnet::nma.run(model, 
+                                     n.burnin = state$burnIn,
+                                     n.iter=state$numIter, 
+                                     n.chains = 2, 
+                                     DIC = F)
       state$bnmrDone <- TRUE      
     } else if (state$inputSM == "SMD") {
       # The model file used here is loaded directly from the `NMAJags` library or sourced from the directory (for modelNMRContinuous_bExch)
@@ -222,12 +225,12 @@ server <- function(input, output, session) {
       if (input$inputBeta=="UNRELATED") {
         state$bnmr <- jags(data = state$nmrData, inits = NULL,
                            parameters.to.save = c("SMD", "SMD.ref", "b", "tau"), n.chains = 2, 
-                           n.iter = state$numIter,n.burnin = state$burnIn, 
+                           n.iter = state$numIter, n.burnin = state$burnIn, 
                            DIC=F, n.thin=1, model.file = modelNMRContinuous)
       } else {
         state$bnmr <- jags(data = state$nmrData, inits = NULL,
                            parameters.to.save = c("SMD", "SMD.ref", "B", "tau"), n.chains = 2, 
-                           n.iter = state$numIter,n.burnin = state$burnIn, 
+                           n.iter = state$numIter, n.burnin = state$burnIn, 
                            DIC=F, n.thin=1, model.file = modelNMRContinuous_bExch)
       }
       state$bnmrDone <- TRUE
@@ -242,8 +245,11 @@ server <- function(input, output, session) {
                                   effects= input$inputMod,
                                   covariate = "pooled_var",
                                   prior.beta = input$inputBeta)
-    state$bnmr <- BUGSnet::nma.run(model, n.burnin = state$burnIn,
-                                   n.iter=state$numIter, n.chains = 2, DIC = F)
+      state$bnmr <- BUGSnet::nma.run(model, 
+                                   n.burnin = state$burnIn,
+                                   n.iter=state$numIter, 
+                                   n.chains = 2, 
+                                   DIC = F)
     state$bnmrDone <- TRUE
     }
 
@@ -269,11 +275,11 @@ server <- function(input, output, session) {
       if (state$inputBeta == "EXCHANGEABLE") {
         if (state$inputSM== "SMD") {
           print(state$bnmr$BUGSoutput$summary[grep("B", rownames(state$bnmr$BUGSoutput$summary)),"mean"])
-          coef <- state$bnmr$BUGSoutput$mean$B
+          coef <- round(state$bnmr$BUGSoutput$mean$B, digits=3)
         } else {
           c1 <- state$bnmr$samples[1][[1]][,grep("beta",colnames(state$bnmr$samples[1][[1]]))]
           c2 <- state$bnmr$samples[2][[1]][,grep("beta",colnames(state$bnmr$samples[2][[1]]))]
-          coef <- mean(rbind(c1, c2))
+          coef <- round(mean(rbind(c1, c2), digits=3))
         }
         coef
       }
