@@ -453,7 +453,7 @@ server <- function(input, output, session) {
     fluidPage(theme = bs_theme(version = 4),
       sidebarLayout(
         sidebarPanel(
-          fileInput("file", "Choose CSV file",
+          fileInput("file", "Upload data file",
                      accept = c("text/csv",
                                 "text/comma-separated-values,text/plain",
                                 ".csv"))
