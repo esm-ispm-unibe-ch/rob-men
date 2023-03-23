@@ -504,10 +504,10 @@ server <- function(input, output, session) {
 
   output$ModelOptions <- renderUI({
     if (!state$analysisStarted){
-      chs = c("Random effects" = "random", "Fixed effects" = "fixed")
+      chs = c("Random effects" = "random", "Common effects" = "fixed")
     } else {
       if (state$inputMod == "fixed") {
-        chs = c("Fixed effects" = "fixed")
+        chs = c("Common effects" = "fixed")
       } else {
         chs = c("Random effects" = "random")
       }
@@ -808,8 +808,6 @@ server <- function(input, output, session) {
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
           div(tableOutput("coefficients"), align= "center"),
           h6("Press the button below to download the network meta-regression plot as PDF."), 
-          p("Each line shows how the linear effect of each treatment versus reference changes for different study variances. 
-            The value at variance 0 are the extrapolated linear effects of each treatment versus reference for an imaginary study with 0 variance."),
           downloadButton("downloadNmr", "Download Regression Plot as PDF", class = "btn-primary"),
           h5("League table", align = "center"),
           p("League table showing results for the minimum observed variance of", textOutput("minvar", inline = T), align= "center"),
