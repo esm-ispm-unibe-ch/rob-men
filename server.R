@@ -411,7 +411,7 @@ server <- function(input, output, session) {
 
   observeEvent(input$applyProposedRobTable, {
     print("Applying proposed to Final")
-    state$robTable <- mutate(state$robTable, overallRob = proposedOverall)
+    state$robTable <- mutate(state$robTable, final = proposedOverall)
   })
 
   observeEvent(input$contrEval, {
@@ -439,7 +439,7 @@ server <- function(input, output, session) {
       sel <-  unlist(strsplit(selected$id ,"-vs-", fixed = TRUE))
       icomparison <- sel[[2]]
       chr <- filter(state$robTable, icomparison == make.names(comparison)) %>%
-        mutate(overallRob = as.integer(selected$value))
+        mutate(final = as.integer(selected$value))
       print(chr)
       state$robTable <- rows_update(state$robTable, chr)
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
@@ -1055,7 +1055,7 @@ server <- function(input, output, session) {
       mutate(contrTreat3Web = mapply(function(x){round(x, digits=0)},contrTreat3)) %>%
       mutate(contrEvaluationWeb = mapply(FormatColumnContrEval, comparison,treat1, treat2, contrEvaluation)) %>%
       mutate(effectsEvaluationWeb = mapply(FormatColumnStudyEffects, comparison,treat1, treat2, effectsEvaluation)) %>%
-      mutate(overallRobWeb = mapply(CalculateRobTableOverall, comparison, treat1, treat2, proposedOverall, overallRob)) %>%
+      mutate(overallRobWeb = mapply(CalculateRobTableOverall, comparison, treat1, treat2, proposedOverall, final)) %>%
       select(mixed, comparison, contrTreat1Web, contrTreat2Web,
              contrEvaluationWeb, table1_overall_bias_web, nmaEffect,
              nmrEffect, effectsEvaluationWeb, overallRobWeb)

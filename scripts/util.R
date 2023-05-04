@@ -368,7 +368,7 @@ buildRobTable <- function(table1, contribution.matrix, nmaleague, nmrleague, tre
     mutate(nmrEffect = formatEffects(nmrEffect)) %>%
     mutate(effectsEvaluation = 0) %>%
     mutate(proposedOverall = 0) %>%
-    mutate(overallRob = 0) %>%
+    mutate(final = 0) %>%
     select(comparison
           ,treat1
           ,treat2
@@ -381,7 +381,7 @@ buildRobTable <- function(table1, contribution.matrix, nmaleague, nmrleague, tre
           ,nmrEffect
           ,effectsEvaluation
           ,proposedOverall
-          ,overallRob
+          ,final
           ,mixed)
   return(robTable)
 }
@@ -391,7 +391,7 @@ rebuildRobTable <- function(table1, contribution.matrix, nmaleague, nmrleague, r
   res$contrEvaluation <- robTable$contrEvaluation
   res$effectsEvaluation <- robTable$effectsEvaluation
   res$proposedOverall <- ProposeOverallRob(res)
-  res$overallRob <- robTable$overallRob
+  res$final <- robTable$final
   return(res)
 }
 
