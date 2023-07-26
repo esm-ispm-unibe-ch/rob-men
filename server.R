@@ -644,6 +644,8 @@ server <- function(input, output, session) {
       )
     } else {
       tags$h4("Analysis not started")
+      conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
+        tags$div(class = "loading", tags$img(src = "./loading.gif")))
     }
   })
 
