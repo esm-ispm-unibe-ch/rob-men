@@ -643,9 +643,12 @@ server <- function(input, output, session) {
         tabPanel("Contribution matrix", uiOutput("tabContributionMatrix"))
       )
     } else {
-      tags$h4("Analysis not started")
-      conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
-        tags$div(class = "loading", tags$img(src = "./loading.gif")))
+      tagList(
+        conditionalPanel(condition = "!$('html').hasClass('shiny-busy')",
+          tags$h4("Analysis not started")),
+        conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
+          tags$div(class = "loading", tags$img(src = "./loading.gif")))
+      )
     }
   })
 
