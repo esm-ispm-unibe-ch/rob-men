@@ -53,7 +53,8 @@ modelNMRContinuous_bExch <- function ()
       predSMD[c, k] ~ dnorm(SMD[c, k], PREC)
     }
   }
-  order[1:nt] <- rank(d[1:nt])
+  order[1:nt] <- nt + 1 - rank(d[1:nt])
+  # this is when the outcome is positive - omit 'nt+1-' when the outcome is negative
   for (k in 1:nt) {
     most.effective[k] <- equals(order[k], 1)
     for (j in 1:nt) {
@@ -66,8 +67,7 @@ modelNMRContinuous_bExch <- function ()
     }
   }
   for (k in 1:nt) {
-    SUCRA[k] <- sum(cumeffectiveness[k, 1:(nt - 1)])/(nt - 
-                                                        1)
+    SUCRA[k] <- sum(cumeffectiveness[k, 1:(nt - 1)])/(nt - 1)
   }
   for (i in 1:nt) {
     for (j in 1:nt) {

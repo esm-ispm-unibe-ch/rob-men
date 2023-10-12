@@ -65,16 +65,16 @@
 
 
 netcontrib = function(x, model){
-  if (!meta:::is.installed.package("igraph", stop = FALSE)) {
-    warning(paste("Package 'igraph' missing.",
-                  "\n  ",
-                  "Please use the following R command for installation:",
-                  "\n  ",
-                  "install.packages(\"igraph\")",
-                  sep = ""),
-            call. = FALSE)
-    return(invisible(NULL))
-  }
+  # if (!meta:::is_installed_package("igraph", stop = FALSE)) {
+  #   warning(paste("Package 'igraph' missing.",
+  #                 "\n  ",
+  #                 "Please use the following R command for installation:",
+  #                 "\n  ",
+  #                 "install.packages(\"igraph\")",
+  #                 sep = ""),
+  #           call. = FALSE)
+  #   return(invisible(NULL))
+  # }
   res <- contribution.matrix(x,model)
   res
 }

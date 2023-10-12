@@ -34,36 +34,35 @@ modelNMAContinuous <- function(){
   #compared to baseline
   for (c in 1:nt) {SMD.ref[c] <-d[c] - d[ref] }
   #predictions
-  #predictions
   for (c in 1:(ref-1)) { X[c]<-d[c] - d[ref]
   predSMD.ref[c] ~dnorm( X[c],PREC)}
   for (c in (ref+1):nt) { X[c]<-d[c] - d[ref]
   predSMD.ref[c] ~dnorm( X[c],PREC)}
   for (c in 1:(nt-1)) {  for (k in (c+1):nt)  { predSMD[c,k] ~ dnorm( SMD[c,k],PREC)  }  }
   
-  #Treatment hierarchy
-  order[1:nt]<- rank(d[1:nt])
+  # #Treatment hierarchy
+  order[1:nt]<- nt + 1 - rank(d[1:nt])
+    # this is when the outcome is positive - omit 'nt+1-' when the outcome is negative
   for(k in 1:nt) {
-    # this is when the outcome is positive - omit  'nt+1-' when the outcome is negative
     most.effective[k]<-equals(order[k],1)
     for(j in 1:nt) {
       effectiveness[k,j]<- equals(order[k],j)
     }
   }
-  
+
   for(k in 1:nt) {
     for(j in 1:nt) {
       cumeffectiveness[k,j]<- sum(effectiveness[k,1:j])
     }
   }
-  
+
   #SUCRAS#
-  
+
   for(k in 1:nt) {
     SUCRA[k]<- sum(cumeffectiveness[k,1:(nt-1)]) /(nt-1)
   }
   #Fit of the Model#
-  
+
   for(i in 1:ns) {
     for(k in 1:na[i]) {
       Darm[i,k]<-(y[i,t[i,k]]-phi[i,t[i,k]])*(y[i,t[i,k]]-phi[i,t[i,k]])*prec[i,t[i,k]]

@@ -50,11 +50,12 @@
         <header class="jumbotron jumbotron-fluid">
           <div class="container-fluid text-center">
             <h1 class="display-3">Risk Of Bias due to Missing Evidence in Network meta-analysis</h1>
-            <p class="lead pb-4">ROB-MEN is a web application that simplifies the evaluation of risk of bias due to missing evidence (i.e. evidence missing due to unpublished studies and/or selective outcome reporting) in the estimates from network meta-analysis. It is part of the <a href="https://cinema.ispm.unibe.ch/">CINeMA (Confidence in Network Meta-Analysis)</a> framework.</p>
+            <p class="lead pb-4">ROB-MEN is a web-application that simplifies the evaluation of risk of bias due to missing evidence (i.e. evidence missing due to unpublished studies and/or selective outcome reporting) in the estimates from network meta-analysis. It is part of the <a href="https://cinema.ispm.unibe.ch/">CINeMA (Confidence in Network Meta-Analysis)</a> framework.</p>
           </div>
         </header>
         <div class="container fluid">
-        <h2>Instructions</h2>
+        <h4>Instructions</h4>
+        <h6>See the <a href="https://doi.org/10.1186/s12874-023-02038-9"> ROB-MEN tutorial </a>article for more details</h6>
         <p>ROB-MEN requires data to be uploaded as a .csv file in long format, where each row contains one treatment arm. All studies identified in the systematic review, including those not reporting the outcome of interest, should be included in the dataset. The long format data file should contain five columns (for binary data) or six columns (for continuous data) labelled as follows:
         <ul>
           <li>Column <code>id</code> containing the study identifier, starting from 1, then 2, 3, 4... etc.</li>
@@ -75,16 +76,18 @@
        </p>
 
         <h4>Demo data</h4>
-        <p>Click <a href="cad_detection.csv" download>here</a> to download a demo dataset: a network of non-invasive diagnostic modalities for the detection of coronary artery disease. (<a href="https://www.bmj.com/content/360/bmj.k504">Siontis G C, et al. BMJ 2018; 360 :k504</a>)
+        <p>Click <a href="cad_detection.csv" download>here</a> to download a demo dataset: a network of non-invasive diagnostic modalities for the detection of coronary artery disease (<a href="https://www.bmj.com/content/360/bmj.k504">Siontis G C, et al. BMJ 2018; 360 :k504</a>).
         </p>
-
+        <br>
         <h3>Documentation and training material</h3>
-        <p> Please cite ROB-MEN as:
-        <a href="https://doi.org/10.1186/s12916-021-02166-3">Chiocchia V, Nikolakopoulou A, Higgins JPT, Page MJ, Papakonstantinou T, Cipriani A, Furukawa TA, Siontis GCM, Egger M, Salanti G. <b>ROB-MEN: a tool to assess risk of bias due to missing evidence in network meta-analysis.</b> <i>BMC Med</i> (2021) 19:304</a>
+        <h6>How to cite ROB-MEN</h6>
+        <p>Methodology article: <a href="https://doi.org/10.1186/s12916-021-02166-3">Chiocchia V, Nikolakopoulou A, Higgins JPT, Page MJ, Papakonstantinou T, Cipriani A, Furukawa TA, Siontis GCM, Egger M, Salanti G. <b>ROB-MEN: a tool to assess risk of bias due to missing evidence in network meta-analysis.</b> <i>BMC Med</i> (2021) 19:304</a>
+        <br>
+        ROB-MEN tutorial article: <a href="https://doi.org/10.1186/s12874-023-02038-9">Chiocchia V, Holloway A & Salanti, G. <b>Semi-automated assessment of the risk of bias due to missing evidence in network meta-analysis: a guidance paper for the ROB-MEN web-application.</b> <i>BMC Med Res Methodol</i> (2023) 23:223</a>
         </p>
-
+        
         <p> For more information on how to use the ROB-MEN app, watch the <a href="https://training.cochrane.org/resource/rob-men-tool-to-evaluate-risk-of-bias"> Cochrane Learning Live webinar videos</a>.</p>
-
+        <br>
         <p>ROB-MEN is distributed under the <a href="LICENSE.txt">GNU AGPL V3 license</a>. The source code is available on <a href="https://github.com/esm-ispm-unibe-ch/rob-men"><i class="fa-brands fa-github"></i> GitHub</a>.</p>
         </div>
       </div>
@@ -109,7 +112,7 @@
       </div>
       <div class="row credits mx-0 py-3">
         <div class="col-md-12 text-center">
-          Developed by the <a href="https://www.ispm.unibe.ch/research/research_groups/evidence_synthesis_methods/index_eng.html">Evidence Synthesis Methods team</a> at the ISPM, University of Bern
+          Developed by the <a href="https://www.ispm.unibe.ch/research/research_groups_and_themes/evidence_synthesis_methods/index_eng.html">Evidence Synthesis Methods team</a> at the ISPM, University of Bern
         </div>
       </div>
     </footer>
