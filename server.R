@@ -34,6 +34,7 @@ server <- function(input, output, session) {
     modelRandom = FALSE,
     burnIn = 1000,
     numIter = 10000,
+    thin = 1,
     # analysis outputs and state
     error = "",
     nma = "",
@@ -117,6 +118,9 @@ server <- function(input, output, session) {
   observeEvent(input$burnIn, {
      state$burnIn <- max(input$burnIn, state$numIter * 0.1)
   })
+  
+  observeEvent(input$thin,
+     state$thin <- input$thin)
 
   observeEvent(input$inputMod,
      state$inputMod <- input$inputMod
@@ -215,7 +219,8 @@ server <- function(input, output, session) {
       
       state$bnmr <- BUGSnet::nma.run(model, 
                                      n.burnin = state$burnIn,
-                                     n.iter=state$numIter, 
+                                     n.iter = state$numIter, 
+                                     thin = state$thin,
                                      n.chains = 2, 
                                      DIC = F)
       state$bnmrDone <- TRUE      
@@ -226,12 +231,12 @@ server <- function(input, output, session) {
         state$bnmr <- jags(data = state$nmrData, inits = NULL,
                            parameters.to.save = c("SMD", "SMD.ref", "b", "tau"), n.chains = 2, 
                            n.iter = state$numIter, n.burnin = state$burnIn, 
-                           DIC=F, n.thin=1, model.file = modelNMRContinuous)
+                           DIC=F, n.thin=state$thin, model.file = modelNMRContinuous)
       } else {
         state$bnmr <- jags(data = state$nmrData, inits = NULL,
                            parameters.to.save = c("SMD", "SMD.ref", "B", "tau"), n.chains = 2, 
                            n.iter = state$numIter, n.burnin = state$burnIn, 
-                           DIC=F, n.thin=1, model.file = modelNMRContinuous_bExch)
+                           DIC=F, n.thin=state$thin, model.file = modelNMRContinuous_bExch)
       }
       state$bnmrDone <- TRUE
     } else if (state$inputSM== "MD") {
@@ -249,7 +254,8 @@ server <- function(input, output, session) {
       state$bnmr <- BUGSnet::nma.run(model, 
                                    DIC=F,
                                    n.burnin = state$burnIn,
-                                   n.iter=state$numIter, 
+                                   n.iter = state$numIter,
+                                   thin = state$thin,
                                    n.chains = 2)
 
     state$bnmrDone <- TRUE
@@ -456,11 +462,11 @@ server <- function(input, output, session) {
           fileInput("file", "Upload data file",
                      accept = c("text/csv",
                                 "text/comma-separated-values,text/plain",
-                                ".csv"))
-        ),
+                                ".csv")),
+          width = 2),
         mainPanel(
-          DT::dataTableOutput("contents")
-        )
+          DT::dataTableOutput("contents"),
+          width = 10)
       )
     )
   })
@@ -534,6 +540,7 @@ server <- function(input, output, session) {
     if (!state$analysisStarted) {
       bin <- state$burnIn
       iter <- state$numIter
+      nt <- state$thin
       tags$div(
         numericInput(
           inputId = "burnIn",
@@ -552,6 +559,15 @@ server <- function(input, output, session) {
           max = NA,
           step = 10,
           width = NULL
+        ),
+        numericInput(
+          inputId = "thin",
+          label = "Thinning factor",
+          value = nt,
+          min = 1,
+          max = NA,
+          step = 1,
+          width = NULL
         )
       )
     } else {
@@ -559,7 +575,9 @@ server <- function(input, output, session) {
         tags$div(class = "control-label", "Burn In"),
         tags$p(state$burnIn),
         tags$div(class = "control-label", "Iterations"),
-        tags$p(state$numIter)
+        tags$p(state$numIter),
+        tags$div(class = "control-label", "Thinning factor"),
+        tags$p(state$thin)
       )
     }
   })
@@ -777,7 +795,7 @@ server <- function(input, output, session) {
       if(state$inputSM=="SMD") {
         tags$div (
           h5("Checks for convergence of network meta-regression model", align = "center"),
-          p("Check the trace plots (download) and the Gelman-Rubin diagnostic values (table below) being close to 1 for convergence. If needed, increase number of iterations and burn-in or change the assumption for treatment-specific interactions to 'Exchangeable' and rerun analysis"),
+          p("Check the trace plots (download) and the Gelman-Rubin diagnostic values (table below) being close to 1 for convergence. If needed, increase number of iterations, burn-in and/or thinning factor, or change the assumption for treatment-specific interactions to 'Exchangeable' and rerun analysis"),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
           div(tableOutput("rhat"), align= "center"),
@@ -800,7 +818,7 @@ server <- function(input, output, session) {
       else {
         tags$div (
           h5("Checks for convergence of network meta-regression model", align = "center"),
-          p("Check the trace plots (download) and the Gelman-Rubin diagnostic values (table below) being close to 1 for convergence. If needed, increase number of iterations and burn-in or change the assumption for treatment-specific interactions to 'Exchangeable' and rerun analysis"),
+          p("Check the trace plots (download) and the Gelman-Rubin diagnostic values (table below) being close to 1 for convergence. If needed, increase number of iterations, burn-in and/or thinning factor, or change the assumption for treatment-specific interactions to 'Exchangeable' and rerun analysis"),
           conditionalPanel(condition = "$('html').hasClass('shiny-busy')",
                            tags$div(class = "loading", tags$img(src = "./loading.gif"))),
           div(tableOutput("rhat"), align= "center"),
