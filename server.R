@@ -173,7 +173,7 @@ server <- function(input, output, session) {
     # calculate data for Bayesian NMR
     print("Calculating pooled variance")
     bnmrData <- pool_variances(state$nma, directs())
-    print(head(bnmrData))
+    print(bnmrData$pooled_var)
     if(state$inputSM == "SMD"){
       state$nmrData <- makeJagsNMAdata(id, n=n, y=mean, sd=sd, t=t, data=bnmrData, reference = state$inputRef, othervar = pooled_var)
       state$nmrData$orig <- state$nmrData$variab 
