@@ -474,14 +474,14 @@
     },
     "data.table": {
       "Package": "data.table",
-      "Version": "1.17.2",
+      "Version": "1.17.8",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R",
         "methods"
       ],
-      "Hash": "635dab9a2cf94e651ee57b31373e5677"
+      "Hash": "1d991cd6160fa7b1fdbd3689034cbd15"
     },
     "dbplyr": {
       "Package": "dbplyr",
